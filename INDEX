@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SD카드 용량 계산기 (홈카메라용)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .calculator-container {
+            width: 320px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+        .calculator-title {
+            text-align: center;
+            color: white;
+            background-color: #38b2ac; /* SD카드용으로 색상 변경 */
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            width: 100px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .input-group select,
+        .input-group input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .input-group span {
+            width: 30px;
+            text-align: right;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .result-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            padding: 10px;
+            background-color: #fffbe6;
+            border: 1px solid #fce38a;
+            border-radius: 5px;
+        }
+        .result-group label {
+            font-weight: bold;
+            color: #333;
+        }
+        .result-group #result-days {
+            flex-grow: 1;
+            margin-left: 10px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            font-weight: bold;
+            text-align: right;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #calculate-button {
+            background-color: #38b2ac;
+            color: white;
+            margin-top: 20px;
+        }
+        #calculate-button:hover {
+            background-color: #319795;
+        }
+        #reset-button {
+            background-color: #f0f0f0;
+            color: #555;
+            margin-top: 10px;
+        }
+        #reset-button:hover {
+            background-color: #e0e0e0;
+        }
+        .disclaimer {
+            text-align: center;
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <div class="calculator-title">SD카드 용량 계산기</div>
+
+    <div class="input-group">
+        <label for="resolution">해상도</label>
+        <select id="resolution">
+            <option value="2">2 MP (FHD)</option>
+            <option value="4">4 MP (QHD)</option>
+        </select>
+        <span>MP</span>
+    </div>
+
+    <div class="input-group">
+        <label for="cameras">카메라수</label>
+        <input type="number" id="cameras" value="1" min="1">
+        <span>EA</span>
+    </div>
+
+    <div class="input-group">
+        <label for="frame">프레임</label>
+        <select id="frame">
+            <option value="15">15 FPS</option>
+            <option value="30">30 FPS</option>
+        </select>
+        <span>FPS</span>
+    </div>
+    
+    <div class="input-group">
+        <label for="recording-mode">녹화 방식</label>
+        <select id="recording-mode">
+            <option value="continuous">24시간 연속 녹화</option>
+            <option value="motion">움직임 감지 녹화</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label for="sd-capacity">SD카드 용량</label>
+        <input type="number" id="sd-capacity" value="64" min="1">
+        <span>GB</span>
+    </div>
+
+    <button id="calculate-button">계산</button>
+    <button id="reset-button">RESET</button>
+    
+    <div class="result-group">
+        <label>녹화일수(약</label>
+        <input type="text" id="result-days" readonly>
+        <span>일)</span>
+    </div>
+    
+    <p class="disclaimer">※방식이나 상품에 따라 차이가 있을 수 있으니 참고만 해주세요.</p>
+</div>
+
+<script>
+// 해상도, 프레임에 따른 1일당 용량 데이터 (대략적인 값, GB 기준)
+// 홈카메라의 효율을 고려하여 HDD용보다 용량 데이터를 조금 낮게 설정했습니다.
+const dailyData = {
+    '2': { '15': 10, '30': 20 }, 
+    '4': { '15': 20, '30': 40 },
+};
+
+// HTML 요소 가져오기
+const resolutionSelect = document.getElementById('resolution');
+const camerasInput = document.getElementById('cameras');
+const frameSelect = document.getElementById('frame');
+const recordingModeSelect = document.getElementById('recording-mode');
+const sdCapacityInput = document.getElementById('sd-capacity');
+const resultDaysInput = document.getElementById('result-days');
+const calculateButton = document.getElementById('calculate-button');
+const resetButton = document.getElementById('reset-button');
+
+// 계산 함수
+function calculateDays() {
+    const resolution = resolutionSelect.value;
+    const cameras = camerasInput.value;
+    const frame = frameSelect.value;
+    const recordingMode = recordingModeSelect.value;
+    const sdCapacity = sdCapacityInput.value;
+
+    // 선택된 해상도와 프레임에 따른 1일당 용량 가져오기 (GB)
+    const dailyGbPerCamera = dailyData[resolution] ? dailyData[resolution][frame] : 0;
+    
+    // 녹화 방식에 따른 용량 절약율 (움직임 감지 녹화는 24시간 연속 녹화의 약 20% 용량만 사용한다고 가정)
+    const compressionMultiplier = (recordingMode === 'motion') ? 0.2 : 1;
+
+    // 총 녹화 용량 계산 (1일 기준)
+    const totalDailyGb = dailyGbPerCamera * cameras * compressionMultiplier;
+
+    // 녹화 가능 일수 계산
+    const recordingDays = totalDailyGb > 0 ? sdCapacity / totalDailyGb : 0;
+
+    // 결과를 반올림하여 정수 형태로 표시
+    resultDaysInput.value = Math.round(recordingDays);
+}
+
+// 이벤트 리스너 연결
+calculateButton.addEventListener('click', calculateDays);
+resetButton.addEventListener('click', () => {
+    // 초기값으로 리셋
+    resolutionSelect.value = '2';
+    camerasInput.value = '1';
+    frameSelect.value = '30';
+    recordingModeSelect.value = 'continuous';
+    sdCapacityInput.value = '64';
+    resultDaysInput.value = '';
+});
+</script>
+
+</body>
+</html>
